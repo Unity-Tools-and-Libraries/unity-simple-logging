@@ -24,7 +24,7 @@ If you enable `Log` level logging, `Waring` and `Error` levels are also enabled.
 
 Whenever you log a message, you can specify a context as the final argument. The logger will check to ensure that logging is enabled for the specified level and context before actually logging the message. When no context is specified, a message is automatically given the catch-all context of `*`. 
 
-This allows you to separate your logging into different domains and specify how verbose your logs in that domain will be; for example, if you're debugging issues in your combat logic, you can log all of the nitty-gritty in their without clogging the logs with the trace-level logging of every part of the application.
+This allows you to separate your logging into different domains and specify how verbose your logs in that domain will be; for example, if you're debugging issues in your combat logic, you can log all of the nitty-gritty in there without clogging the logs with the trace-level logging of every part of the application.
 
 ### Lazy Evaluation
 Instead of passing a string message to the logging methods, you can provide a `Func<string>` to generate them. This means the string is only used when needed; the advantage to this is primarily for when you use string formatting to create the message, as this requires memory allocation. Lazy evaluation saves this usage if the message wouldn't actually end up being used.
