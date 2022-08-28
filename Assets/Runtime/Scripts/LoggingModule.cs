@@ -19,12 +19,17 @@ namespace io.github.thisisnozaku.logging
     {
         private Dictionary<string, Dictionary<LogType, bool>> LogContextLevels = new Dictionary<string, Dictionary<LogType, bool>>()
         {
-            { "*", new Dictionary<LogType, bool>() { {  LogType.Log, true} } }
+            { "*", new Dictionary<LogType, bool>() { 
+                    {  LogType.Log, true}, 
+                    { LogType.Error, true }, 
+                    { LogType.Warning, true } 
+                } 
+            }
         };
 
         private void DoLog(LogType level, string logMessage, string logContext = null)
         {
-            if(logContext == null)
+            if (logContext == null)
             {
                 logContext = "*";
             }
@@ -51,30 +56,7 @@ namespace io.github.thisisnozaku.logging
             Dictionary<LogType, bool> levels;
             if (LogContextLevels.TryGetValue(logContext, out levels) || LogContextLevels.TryGetValue(logContext, out levels))
             {
-                switch(logLevel)
-                {
-                    case LogType.Assert:
-                    case LogType.Error:
-                    case LogType.Exception:
-                        if (!levels.TryGetValue(LogType.Log, out logEnabled))
-                        {
-                            if (!levels.TryGetValue(LogType.Warning, out logEnabled))
-                            {
-                                levels.TryGetValue(LogType.Error, out logEnabled);
-                            }
-                        }
-                        break;
-                    case LogType.Warning:
-                        if(!levels.TryGetValue(LogType.Warning, out logEnabled))
-                        {
-                            levels.TryGetValue(LogType.Error, out logEnabled);
-                        }
-                        break;
-                    case LogType.Log:
-                        levels.TryGetValue(logLevel, out logEnabled);
-                        break;
-                    
-                }
+                logEnabled = levels[logLevel];
             }
             return logEnabled;
         }
@@ -84,7 +66,7 @@ namespace io.github.thisisnozaku.logging
          * 
          */
         public void Log(LogType logType, string logMessage, string logContext = null)
-        {   
+        {
             if (IsLogEnabled(logType, logContext))
             {
                 DoLog(logType, logMessage, logContext);
@@ -137,32 +119,39 @@ namespace io.github.thisisnozaku.logging
         /*
          * Enable or disable logging in the given context.
          */
-        public void ConfigureLogging(string logContext, LogType? logLevel, bool enabled = true)
+        public void ConfigureLogging(string logContext, LogType? logLevel)
         {
             logLevel = logLevel.HasValue ? logLevel.Value : LogType.Log;
-            Dictionary<LogType, bool> contexts;
             switch (logLevel)
             {
-                case LogType.Log:
-                    ConfigureLogging(logContext, LogType.Warning, enabled);
+                case LogType.Error:
+                case LogType.Assert:
+                case LogType.Exception:
+                    DoConfiguration(logContext, LogType.Log, false);
+                    DoConfiguration(logContext, LogType.Warning, false);
                     break;
                 case LogType.Warning:
-                    ConfigureLogging(logContext, LogType.Error, enabled);
+                    DoConfiguration(logContext, LogType.Log, false);
+                    DoConfiguration(logContext, LogType.Error, true);
                     break;
+                case LogType.Log:
+                    DoConfiguration(logContext, LogType.Warning, true);
+                    DoConfiguration(logContext, LogType.Error, true);
+                    break;
+
             }
+            DoConfiguration(logContext, logLevel.Value, true);
+        }
+
+        private void DoConfiguration(string logContext, LogType logLevel, bool enabled)
+        {
+            Dictionary<LogType, bool> contexts;
             if (!LogContextLevels.TryGetValue(logContext, out contexts))
             {
                 contexts = new Dictionary<LogType, bool>();
                 LogContextLevels[logContext] = contexts;
             }
-            if (!logLevel.HasValue)
-            {
-                contexts.Clear();
-            }
-            else
-            {
-                contexts[logLevel.Value] = enabled;
-            }
+            contexts[logLevel] = enabled;
         }
     }
 }

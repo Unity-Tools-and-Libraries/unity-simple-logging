@@ -90,10 +90,9 @@ namespace io.github.thisisnozaku.logging.tests
         }
 
         [Test]
-        public void LogWarningIfLevelIsError()
+        public void DoNotLogWarningIfLevelIsError()
         {
             logger.ConfigureLogging("combat", LogType.Error);
-            LogAssert.Expect(LogType.Warning, "[combat] message");
 
             logger.Log(LogType.Warning, "message", "combat");
 
