@@ -139,6 +139,7 @@ namespace io.github.thisisnozaku.logging
          */
         public void ConfigureLogging(string logContext, LogType? logLevel, bool enabled = true)
         {
+            logLevel = logLevel.HasValue ? logLevel.Value : LogType.Log;
             Dictionary<LogType, bool> contexts;
             switch (logLevel)
             {
