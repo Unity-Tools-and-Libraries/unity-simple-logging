@@ -12,18 +12,16 @@ namespace io.github.thisisnozaku.logging
      * The log levels of Log (for informational message), Warning (for messages which are not errors but 
      * indicate potential problems) and Error(for error messages) are used. Assert and Exception are 
      * treated as equivalent to Error.
-     * 
-     * 
      */
     public class LoggingModule
     {
         private Dictionary<string, Dictionary<LogType, bool>> LogContextLevels = new Dictionary<string, Dictionary<LogType, bool>>()
         {
-            { "*", new Dictionary<LogType, bool>() { 
-                    {  LogType.Log, true}, 
-                    { LogType.Error, true }, 
-                    { LogType.Warning, true } 
-                } 
+            { "*", new Dictionary<LogType, bool>() {
+                    {  LogType.Log, true},
+                    { LogType.Error, true },
+                    { LogType.Warning, true }
+                }
             }
         };
 
@@ -60,16 +58,27 @@ namespace io.github.thisisnozaku.logging
             }
             return logEnabled;
         }
+
         /*
          * Log the given message at the given level, with the given context.
-         * 
-         * 
          */
-        public void Log(LogType logType, string logMessage, string logContext = null)
+        public void Log(LogType logType, string logMessage, params string[] logContext)
         {
-            if (IsLogEnabled(logType, logContext))
+            foreach (var context in logContext)
             {
-                DoLog(logType, logMessage, logContext);
+                if (IsLogEnabled(logType, context))
+                {
+                    DoLog(logType, logMessage, context);
+                }
+            }
+            if (logContext.Length == 0)
+            {
+                {
+                    if (IsLogEnabled(logType, null))
+                    {
+                        DoLog(logType, logMessage, null);
+                    }
+                }
             }
         }
         /*
@@ -78,40 +87,52 @@ namespace io.github.thisisnozaku.logging
          * The primary use case for this is when strings make use of runtime formatting, as this results in lots 
          * of memory usage and you want to ensure you will actually use the message before creating it.
          */
-        public void Log(LogType logType, Func<string> logMessageGenerator, string logContext = null)
+        public void Log(LogType logType, Func<string> logMessageGenerator, params string[] logContext)
         {
-            if (IsLogEnabled(logType, logContext))
+            foreach (var context in logContext)
             {
-                DoLog(logType, logMessageGenerator(), logContext);
+                if (IsLogEnabled(logType, context))
+                {
+                    DoLog(logType, logMessageGenerator(), context);
+                }
+            }
+            if (logContext.Length == 0)
+            {
+                {
+                    if (IsLogEnabled(logType, null))
+                    {
+                        DoLog(logType, logMessageGenerator(), null);
+                    }
+                }
             }
         }
 
-        public void Log(string message, string logContext = null)
+        public void Log(string message, params string[] logContext)
         {
             Log(LogType.Log, message, logContext);
         }
 
-        public void Log(Func<string> messageGenerator, string logContext = null)
+        public void Log(Func<string> messageGenerator, params string[] logContext)
         {
             Log(LogType.Log, messageGenerator, logContext);
         }
 
-        public void Warning(string message, string logContext = null)
+        public void Warning(string message, params string[] logContext)
         {
             Log(LogType.Warning, message, logContext);
         }
 
-        public void Warning(Func<string> messageGenerator, string logContext = null)
+        public void Warning(Func<string> messageGenerator, params string[] logContext)
         {
             Log(LogType.Warning, messageGenerator, logContext);
         }
 
-        public void Exception(string message, string logContext = null)
+        public void Exception(string message, params string[] logContext)
         {
             Log(LogType.Exception, message, logContext);
         }
 
-        public void Exception(Func<string> messageGenerator, string logContext = null)
+        public void Exception(Func<string> messageGenerator, params string[] logContext)
         {
             Log(LogType.Exception, messageGenerator, logContext);
         }
