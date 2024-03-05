@@ -1,3 +1,4 @@
+![Image](CodeCoverage/Report/badge_linecoverage.png)
 # unity-simple-logging
 A basic but flexible logging framework for use in Unity3d games
 
