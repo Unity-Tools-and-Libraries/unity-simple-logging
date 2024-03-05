@@ -1,7 +1,8 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
+
 namespace io.github.thisisnozaku.logging
 {
     /*
@@ -9,170 +10,201 @@ namespace io.github.thisisnozaku.logging
      * 
      * It allows for lazy evaluation of messages and fine-grained control over what contexts are logged.
      * 
-     * The log levels of Log (for informational message), Warning (for messages which are not errors but 
-     * indicate potential problems) and Error(for error messages) are used. Assert and Exception are 
-     * treated as equivalent to Error.
      */
-    public class LoggingModule
+    public class LoggingModule : ILogger
     {
-        private Dictionary<string, Dictionary<LogType, bool>> LogContextLevels = new Dictionary<string, Dictionary<LogType, bool>>()
+        private Dictionary<string, LogLevel> LogContextLevels = new Dictionary<string, LogLevel>()
         {
-            { "*", new Dictionary<LogType, bool>() {
-                    {  LogType.Log, true},
-                    { LogType.Error, true },
-                    { LogType.Warning, true }
-                }
-            }
+            { "*", LogLevel.Info }
         };
 
-        private void DoLog(LogType level, string logMessage, string logContext = null)
+        private void DoLog(LogLevel level, string logMessage, params string[] logContexts)
         {
-            if (logContext == null)
-            {
-                logContext = "*";
-            }
-            string finalMessage = string.Format("[{0}] {1}", logContext, logMessage);
+            string finalMessage = GenerateLogMessage(level, logMessage, logContexts);
             switch (level)
             {
-                case LogType.Error:
-                case LogType.Exception:
-                    Debug.LogError(finalMessage);
+                case LogLevel.Fatal:
+                    UnityEngine.Debug.LogAssertion(finalMessage);
                     break;
-                case LogType.Log:
-                    Debug.Log(finalMessage);
+                case LogLevel.Error:
+                    UnityEngine.Debug.LogError(finalMessage);
                     break;
-                case LogType.Warning:
-                    Debug.LogWarning(finalMessage);
+                case LogLevel.Warn:
+                    UnityEngine.Debug.LogWarning(finalMessage);
+                    break;
+                case LogLevel.Debug:
+                case LogLevel.Info:
+                case LogLevel.Trace:
+                    UnityEngine.Debug.Log(finalMessage);
                     break;
             }
         }
 
-        private bool IsLogEnabled(LogType logLevel, string logContext)
+        private string GenerateLogMessage(LogLevel level, string logMessage, string[] logContexts)
         {
-            bool logEnabled = false;
-            logContext = logContext == null ? "*" : logContext;
-            Dictionary<LogType, bool> levels;
-            if (LogContextLevels.TryGetValue(logContext, out levels) || LogContextLevels.TryGetValue(logContext, out levels))
-            {
-                logEnabled = levels[logLevel];
-            }
-            return logEnabled;
+            return String.Format("{0} {1}",
+                String.Join("", logContexts.Select(c => string.Format("[{0}]", c))),
+                logMessage);
         }
 
-        /*
-         * Log the given message at the given level, with the given context.
-         */
-        public void Log(LogType logType, string logMessage, params string[] logContext)
+        private bool IsLogEnabled(LogLevel logLevel, string logContext)
         {
-            foreach (var context in logContext)
-            {
-                if (IsLogEnabled(logType, context))
-                {
-                    DoLog(logType, logMessage, context);
-                }
-            }
-            if (logContext.Length == 0)
-            {
-                {
-                    if (IsLogEnabled(logType, null))
-                    {
-                        DoLog(logType, logMessage, null);
-                    }
-                }
-            }
-        }
-        /*
-         * Alternative to the basic log function which uses lazy evaluation when creating the message.
-         *
-         * The primary use case for this is when strings make use of runtime formatting, as this results in lots 
-         * of memory usage and you want to ensure you will actually use the message before creating it.
-         */
-        public void Log(LogType logType, Func<string> logMessageGenerator, params string[] logContext)
-        {
-            foreach (var context in logContext)
-            {
-                if (IsLogEnabled(logType, context))
-                {
-                    DoLog(logType, logMessageGenerator(), context);
-                }
-            }
-            if (logContext.Length == 0)
-            {
-                {
-                    if (IsLogEnabled(logType, null))
-                    {
-                        DoLog(logType, logMessageGenerator(), null);
-                    }
-                }
-            }
-        }
-
-        public void Log(string message, params string[] logContext)
-        {
-            Log(LogType.Log, message, logContext);
-        }
-
-        public void Log(Func<string> messageGenerator, params string[] logContext)
-        {
-            Log(LogType.Log, messageGenerator, logContext);
-        }
-
-        public void Warning(string message, params string[] logContext)
-        {
-            Log(LogType.Warning, message, logContext);
-        }
-
-        public void Warning(Func<string> messageGenerator, params string[] logContext)
-        {
-            Log(LogType.Warning, messageGenerator, logContext);
-        }
-
-        public void Exception(string message, params string[] logContext)
-        {
-            Log(LogType.Exception, message, logContext);
-        }
-
-        public void Exception(Func<string> messageGenerator, params string[] logContext)
-        {
-            Log(LogType.Exception, messageGenerator, logContext);
+            logContext = logContext ?? "*";
+            return logLevel <= LogContextLevels.GetValueOrDefault(logContext, LogContextLevels["*"]);
         }
 
         /*
          * Enable or disable logging in the given context.
          */
-        public void ConfigureLogging(string logContext, LogType? logLevel)
+        public void ConfigureLogging(string logContext, LogLevel? logLevel)
         {
-            logLevel = logLevel.HasValue ? logLevel.Value : LogType.Log;
+            logLevel = logLevel.HasValue ? logLevel.Value : LogLevel.Info;
             switch (logLevel)
             {
-                case LogType.Error:
-                case LogType.Assert:
-                case LogType.Exception:
-                    DoConfiguration(logContext, LogType.Log, false);
-                    DoConfiguration(logContext, LogType.Warning, false);
+                case LogLevel.Fatal:
+                case LogLevel.Error:
+                    DoConfiguration(logContext, LogLevel.Info, false);
+                    DoConfiguration(logContext, LogLevel.Warn, false);
                     break;
-                case LogType.Warning:
-                    DoConfiguration(logContext, LogType.Log, false);
-                    DoConfiguration(logContext, LogType.Error, true);
+                case LogLevel.Warn:
+                    DoConfiguration(logContext, LogLevel.Info, false);
+                    DoConfiguration(logContext, LogLevel.Error, true);
                     break;
-                case LogType.Log:
-                    DoConfiguration(logContext, LogType.Warning, true);
-                    DoConfiguration(logContext, LogType.Error, true);
+                case LogLevel.Info:
+                    DoConfiguration(logContext, LogLevel.Warn, true);
+                    DoConfiguration(logContext, LogLevel.Error, true);
                     break;
 
             }
             DoConfiguration(logContext, logLevel.Value, true);
         }
 
-        private void DoConfiguration(string logContext, LogType logLevel, bool enabled)
+        private void DoConfiguration(string logContext, LogLevel logLevel, bool enabled)
         {
-            Dictionary<LogType, bool> contexts;
-            if (!LogContextLevels.TryGetValue(logContext, out contexts))
+            LogContextLevels[logContext] = logLevel;
+        }
+
+        /*
+         * Log the given message at the given level, with the given context.
+         * 
+         * 
+         */
+        public void Log(LogLevel logType, string logMessage, params string[] logContexts)
+        {
+            if (logContexts.Length == 0)
             {
-                contexts = new Dictionary<LogType, bool>();
-                LogContextLevels[logContext] = contexts;
+                logContexts = new string[]
+                {
+                    "*"
+                };
             }
-            contexts[logLevel] = enabled;
+            var enabledContexts = logContexts.Where(ctx => IsLogEnabled(logType, ctx)).ToArray();
+            if (enabledContexts.Length > 0)
+            {
+                DoLog(logType, logMessage, enabledContexts);
+            }
+        }
+
+        /*
+         * Alternative to the basic log function which uses lazy evaluation when creating the message.
+         *
+         * The primary use case for this is when strings make use of runtime formatting, as this results in lots 
+         * of memory usage and you want to ensure you will actually use the message before creating it.
+         */
+        public void Log(LogLevel logType, Func<string> messageGenerator, params string[] logContexts)
+        {
+            if (logContexts.Length == 0)
+            {
+                logContexts = new string[]
+                {
+                    "*"
+                };
+            }
+            var enabledContexts = logContexts.Where(ctx => IsLogEnabled(logType, ctx)).ToArray();
+            if (enabledContexts.Length > 0)
+            {
+                DoLog(logType, messageGenerator(), enabledContexts);
+            }
+        }
+
+        public void Fatal(string logMessage, params string[] logContexts)
+        {
+            Log(LogLevel.Fatal, logMessage, logContexts);
+        }
+
+        public void Fatal(Func<string> messageGenerator, params string[] logContexts)
+        {
+            Log(LogLevel.Fatal, messageGenerator, logContexts);
+        }
+
+        public void Error(string logMessage, params string[] logContexts)
+        {
+            Log(LogLevel.Error, logMessage, logContexts);
+        }
+
+        public void Error(Func<string> messageGenerator, params string[] logContexts)
+        {
+            Log(LogLevel.Error, messageGenerator, logContexts);
+        }
+
+        public void Warn(string logMessage, params string[] logContexts)
+        {
+            Log(LogLevel.Warn, logMessage, logContexts);
+        }
+
+        public void Warn(Func<string> messageGenerator, params string[] logContexts)
+        {
+            Log(LogLevel.Warn, messageGenerator, logContexts);
+        }
+
+        public void Info(string logMessage, params string[] logContexts)
+        {
+            Log(LogLevel.Info, logMessage, logContexts);
+        }
+
+        public void Info(Func<string> messageGenerator, params string[] logContexts)
+        {
+            Log(LogLevel.Info, messageGenerator, logContexts);
+        }
+
+        public void Debug(string logMessage, params string[] logContexts)
+        {
+            Log(LogLevel.Debug, logMessage, logContexts);
+        }
+
+        public void Debug(Func<string> messageGenerator, params string[] logContexts)
+        {
+            Log(LogLevel.Info, messageGenerator, logContexts);
+        }
+
+        public void Trace(string logMessage, params string[] logContexts)
+        {
+            Log(LogLevel.Trace, logMessage, logContexts);
+        }
+
+        public void Trace(Func<string> messageGenerator, params string[] logContexts)
+        {
+            Log(LogLevel.Trace, messageGenerator, logContexts);
+        }
+
+        public void Log(LogType unityLogType, string logMessage, params string[] logContexts)
+        {
+            switch (unityLogType)
+            {
+                case LogType.Assert:
+                    Log(LogLevel.Fatal, logMessage, logContexts);
+                    break;
+                case LogType.Error:
+                case LogType.Exception:
+                    Log(LogLevel.Error, logMessage, logContexts);
+                    break;
+                case LogType.Log:
+                    Log(LogLevel.Info, logMessage, logContexts);
+                    break;
+                case LogType.Warning:
+                    Log(LogLevel.Warn, logMessage, logContexts);
+                    break;
+            }
         }
     }
 }
