@@ -27,5 +27,7 @@ Whenever you log a message, you can specify a context as the final argument. The
 
 This allows you to separate your logging into different domains and specify how verbose your logs in that domain will be; for example, if you're debugging issues in your combat logic, you can log all of the nitty-gritty in there without clogging the logs with the trace-level logging of every part of the application.
 
+These contexts can also be hierarchical, using a dot notation like "foo.bar.baz". Each of these levels can be configured independently, allowing fine-grained configuration of logging subdomains. For example, you may configure the "foo" domain with a 'Error' level of logging; give the "foo.bar" a level of 'Info' and "foo.bar.baz" a level of 'Trace'. This will log the highest details for "foo.bar.baz", a moderate level for "foo.bar" and its children EXCEPT "foo.bar.baz" and log only the most serious messages for any remaining "foo" logs.
+
 ### Lazy Evaluation
 Instead of passing a string message to the logging methods, you can provide a `Func<string>` to generate them. This means the string is only used when needed; the advantage to this is primarily for when you use string formatting to create the message, as this requires memory allocation. Lazy evaluation saves this usage if the message wouldn't actually end up being used.
