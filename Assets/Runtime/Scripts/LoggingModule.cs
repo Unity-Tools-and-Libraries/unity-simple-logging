@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using UnityEngine;
 
 namespace io.github.thisisnozaku.logging
@@ -17,6 +18,8 @@ namespace io.github.thisisnozaku.logging
         {
             { "*", LogLevel.Info }
         };
+
+        private Dictionary<string, LogLevel> CachedContextLevels = new Dictionary<string, LogLevel>();
 
         private void DoLog(LogLevel level, string logMessage, params string[] logContexts)
         {
@@ -50,7 +53,33 @@ namespace io.github.thisisnozaku.logging
         private bool IsLogEnabled(LogLevel logLevel, string logContext)
         {
             logContext = logContext ?? "*";
-            return logLevel <= LogContextLevels.GetValueOrDefault(logContext, LogContextLevels["*"]);
+            var contextTokens = new Stack<string>(logContext.Split("."));
+            LogLevel? targetContextLevel = null;
+            StringBuilder candidateContext = new StringBuilder();
+            do
+            {
+                for (int i = 0; i < 2; i++) {
+                    candidateContext.Clear();
+                    candidateContext.AppendJoin(".", contextTokens.Reverse());
+                    if(i == 1)
+                    {
+                        if(candidateContext.Length > 1)
+                        {
+                            candidateContext.Append(".");
+                        }
+                        candidateContext.Append("*");
+                    }
+                    if (LogContextLevels.ContainsKey(candidateContext.ToString()))
+                    {
+                        targetContextLevel = LogContextLevels[candidateContext.ToString()];
+                    }
+                    else if (i == 0)
+                    {
+                        contextTokens.Pop();
+                    }
+                }
+            } while (targetContextLevel == null && contextTokens.Count > 0);
+            return logLevel <= targetContextLevel;
         }
 
         /*
