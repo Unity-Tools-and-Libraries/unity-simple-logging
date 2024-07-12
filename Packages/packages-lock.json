@@ -94,6 +94,11 @@
       },
       "url": "https://packages.unity.com"
     },
+<<<<<<< Updated upstream
+=======
+<<<<<<< HEAD
+=======
+>>>>>>> Stashed changes
     "com.unity.ads": {
       "version": "4.4.2",
       "depth": 0,
@@ -103,6 +108,10 @@
       },
       "url": "https://packages.unity.com"
     },
+<<<<<<< Updated upstream
+=======
+>>>>>>> 76c8d675b99352cf034a0e6306b98f76fca3e211
+>>>>>>> Stashed changes
     "com.unity.ai.navigation": {
       "version": "1.1.4",
       "depth": 0,
@@ -112,6 +121,11 @@
       },
       "url": "https://packages.unity.com"
     },
+<<<<<<< Updated upstream
+=======
+<<<<<<< HEAD
+=======
+>>>>>>> Stashed changes
     "com.unity.analytics": {
       "version": "3.8.1",
       "depth": 0,
@@ -122,6 +136,10 @@
       },
       "url": "https://packages.unity.com"
     },
+<<<<<<< Updated upstream
+=======
+>>>>>>> 76c8d675b99352cf034a0e6306b98f76fca3e211
+>>>>>>> Stashed changes
     "com.unity.burst": {
       "version": "1.8.7",
       "depth": 3,

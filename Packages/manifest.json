@@ -1,16 +1,33 @@
 {
   "dependencies": {
+<<<<<<< Updated upstream
+=======
+<<<<<<< HEAD
+    "com.unity.ai.navigation": "1.1.4",
+=======
+>>>>>>> Stashed changes
     "com.unity.2d.sprite": "1.0.0",
     "com.unity.2d.tilemap": "1.0.0",
     "com.unity.ads": "4.4.2",
     "com.unity.ai.navigation": "1.1.4",
     "com.unity.analytics": "3.8.1",
+<<<<<<< Updated upstream
+=======
+>>>>>>> 76c8d675b99352cf034a0e6306b98f76fca3e211
+>>>>>>> Stashed changes
     "com.unity.collab-proxy": "2.0.5",
     "com.unity.feature.2d": "2.0.0",
     "com.unity.ide.rider": "3.0.24",
     "com.unity.ide.visualstudio": "2.0.18",
     "com.unity.ide.vscode": "1.2.5",
+<<<<<<< Updated upstream
     "com.unity.purchasing": "4.9.3",
+=======
+<<<<<<< HEAD
+=======
+    "com.unity.purchasing": "4.9.3",
+>>>>>>> 76c8d675b99352cf034a0e6306b98f76fca3e211
+>>>>>>> Stashed changes
     "com.unity.test-framework": "1.1.33",
     "com.unity.testtools.codecoverage": "1.2.4",
     "com.unity.textmeshpro": "3.0.6",

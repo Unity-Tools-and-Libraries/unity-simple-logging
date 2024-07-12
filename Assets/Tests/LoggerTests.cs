@@ -231,5 +231,25 @@ namespace io.github.thisisnozaku.logging.tests
 
             LogAssert.NoUnexpectedReceived();
         }
+
+        [Test]
+        public void LogCallsToLogSink()
+        {
+            var logSink = new TestSink();
+            logger.ConfigureLogging("combat", LogType.Log, logSink);
+
+            logger.Log("", "combat");
+
+            Assert.IsTrue(logSink.called);
+        }
+
+        public class TestSink : ILogConsumer
+        {
+            public bool called { get; private set; }
+            public void Log(LogType level, string message)
+            {
+                called = true;
+            }
+        }
     }
 }
