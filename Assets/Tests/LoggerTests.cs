@@ -126,7 +126,7 @@ namespace io.github.thisisnozaku.logging.tests
             var logSink = new TestSink();
             logger.ConfigureLogging("combat", LogLevel.Info, logSink);
 
-            logger.Log(LogLevel.Info, "combat");
+            logger.Log(LogLevel.Info, "", "combat");
 
             Assert.IsTrue(logSink.called);
         }
