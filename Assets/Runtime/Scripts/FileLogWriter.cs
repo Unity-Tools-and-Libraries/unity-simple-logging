@@ -15,14 +15,21 @@ namespace io.github.thisisnozaku.logging
 
         public void Log(LogLevel level, string message)
         {
+            StreamWriter outputFile = null;
             try
             {
-                var outputFile = File.AppendText(Destination);
+                outputFile = File.AppendText(Destination);
                 outputFile.Write(message);
                 outputFile.Flush();
             } catch (IOException ex)
             {
                 Debug.LogException(ex);
+            } finally
+            {
+                if (outputFile != null)
+                {
+                    outputFile.Close();
+                }
             }
         }
     }
