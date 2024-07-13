@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using log4net.Core;
 using UnityEngine;
 
 namespace io.github.thisisnozaku.logging
@@ -14,47 +15,40 @@ namespace io.github.thisisnozaku.logging
      */
     public class LoggingModule : ILogger
     {
-        private Dictionary<string, LogLevel> LogContextLevels = new Dictionary<string, LogLevel>()
+        private Dictionary<string, LoggingLevelConfiguration> LogContextLevels = new Dictionary<string, LoggingLevelConfiguration>()
         {
-            { "*", LogLevel.Info }
+            { "*", new LoggingLevelConfiguration("*", LogLevel.Trace, true, ConsoleLogConsumer.CONSUMER) }
         };
 
-        private Dictionary<string, LogLevel> CachedContextLevels = new Dictionary<string, LogLevel>();
+        private Dictionary<string, LogType> CachedContextLevels = new Dictionary<string, LogType>();
 
         private void DoLog(LogLevel level, string logMessage, params string[] logContexts)
         {
-            string finalMessage = GenerateLogMessage(level, logMessage, logContexts);
-            switch (level)
+            if(logContexts.Length == 0)
             {
-                case LogLevel.Fatal:
-                    UnityEngine.Debug.LogAssertion(finalMessage);
-                    break;
-                case LogLevel.Error:
-                    UnityEngine.Debug.LogError(finalMessage);
-                    break;
-                case LogLevel.Warn:
-                    UnityEngine.Debug.LogWarning(finalMessage);
-                    break;
-                case LogLevel.Debug:
-                case LogLevel.Info:
-                case LogLevel.Trace:
-                    UnityEngine.Debug.Log(finalMessage);
-                    break;
+                logContexts = new string[]
+                {
+                    "*"
+                };
+            }
+            foreach (var logContext in logContexts)
+            {
+                var consumer = LogContextLevels[logContext].sink;
+                string finalMessage = string.Format("[{0}] {1}", logContext, logMessage);
+                consumer.Log(level, finalMessage);
             }
         }
 
-        private string GenerateLogMessage(LogLevel level, string logMessage, string[] logContexts)
+        private string GenerateLogMessage(LogType level, string logMessage, string[] logContexts)
         {
-            return String.Format("{0} {1}",
-                String.Join("", logContexts.Select(c => string.Format("[{0}]", c))),
-                logMessage);
+            return $"{level}{string.Join("", logContexts.Select(_ => $"[{_}]"))}{logMessage}";
         }
 
-        private bool IsLogEnabled(LogLevel logLevel, string logContext)
+        private bool IsLogEnabled(LogType logLevel, string logContext)
         {
             logContext = logContext ?? "*";
             var contextTokens = new Stack<string>(logContext.Split("."));
-            LogLevel? targetContextLevel = null;
+            LogType? targetContextLevel = null;
             StringBuilder candidateContext = new StringBuilder();
             do
             {
@@ -69,9 +63,10 @@ namespace io.github.thisisnozaku.logging
                         }
                         candidateContext.Append("*");
                     }
+
                     if (LogContextLevels.ContainsKey(candidateContext.ToString()))
                     {
-                        targetContextLevel = LogContextLevels[candidateContext.ToString()];
+                        //targetContextLevel = new Nullable<LogType>(LogContextLevels[candidateContext.ToString()]);
                     }
                     else if (i == 0)
                     {
@@ -85,155 +80,80 @@ namespace io.github.thisisnozaku.logging
         /*
          * Enable or disable logging in the given context.
          */
-        public void ConfigureLogging(string logContext, LogLevel? logLevel)
+        public void ConfigureLogging(string logContext, LogLevel logLevel, ILogConsumer sink = null)
         {
-            logLevel = logLevel.HasValue ? logLevel.Value : LogLevel.Info;
-            switch (logLevel)
-            {
-                case LogLevel.Fatal:
-                case LogLevel.Error:
-                    DoConfiguration(logContext, LogLevel.Info, false);
-                    DoConfiguration(logContext, LogLevel.Warn, false);
-                    break;
-                case LogLevel.Warn:
-                    DoConfiguration(logContext, LogLevel.Info, false);
-                    DoConfiguration(logContext, LogLevel.Error, true);
-                    break;
-                case LogLevel.Info:
-                    DoConfiguration(logContext, LogLevel.Warn, true);
-                    DoConfiguration(logContext, LogLevel.Error, true);
-                    break;
+            DoConfiguration(logContext, logLevel, true, sink);
+        }
 
+        private void DoConfiguration(string logContext, LogLevel logLevel, bool enabled, ILogConsumer sink)
+        {
+            if(sink == null)
+            {
+                sink = ConsoleLogConsumer.CONSUMER;
             }
-            DoConfiguration(logContext, logLevel.Value, true);
+            LogContextLevels[logContext] = new LoggingLevelConfiguration(logContext, logLevel, enabled, sink);
         }
 
-        private void DoConfiguration(string logContext, LogLevel logLevel, bool enabled)
+        private LoggingLevelConfiguration GetConfiguration(string context)
         {
-            LogContextLevels[logContext] = logLevel;
-        }
-
-        /*
-         * Log the given message at the given level, with the given context.
-         * 
-         * 
-         */
-        public void Log(LogLevel logType, string logMessage, params string[] logContexts)
-        {
-            if (logContexts.Length == 0)
-            {
-                logContexts = new string[]
+            var levels = new Stack<string>(context.Split("."));
+            while (levels.Count > 0) {
+                for (int i = 0; i < 2; i++)
                 {
-                    "*"
-                };
+                    var candidateContext = string.Join(".", levels.Reverse());
+                    LoggingLevelConfiguration configuration;
+                    if (LogContextLevels.TryGetValue(candidateContext, out configuration))
+                    {
+                        return configuration;
+                    }
+                    else
+                    {
+                        levels.Pop();
+                        if(i == 0)
+                        {
+                            levels.Push("*");
+                        }
+                    }
+                }
             }
-            var enabledContexts = logContexts.Where(ctx => IsLogEnabled(logType, ctx)).ToArray();
-            if (enabledContexts.Length > 0)
-            {
-                DoLog(logType, logMessage, enabledContexts);
-            }
+            throw new Exception();
         }
 
-        /*
-         * Alternative to the basic log function which uses lazy evaluation when creating the message.
-         *
-         * The primary use case for this is when strings make use of runtime formatting, as this results in lots 
-         * of memory usage and you want to ensure you will actually use the message before creating it.
-         */
-        public void Log(LogLevel logType, Func<string> messageGenerator, params string[] logContexts)
+        public void Log(LogLevel logLevel, string logMessage, params string[] logContext)
         {
-            if (logContexts.Length == 0)
+            if(logContext.Length == 0)
             {
-                logContexts = new string[]
+                logContext = new string[] { "*" };
+            }
+            foreach(var context in logContext)
+            {
+                var config = GetConfiguration(context);
+                if (config.LogType >= logLevel && config.enabled)
                 {
-                    "*"
-                };
+                    config.sink.Log(logLevel, FormatMessage(context, logMessage));
+                }
             }
-            var enabledContexts = logContexts.Where(ctx => IsLogEnabled(logType, ctx)).ToArray();
-            if (enabledContexts.Length > 0)
+        }
+
+        public void Log(LogLevel logLevel, Func<string> messageGenerator, params string[] logContext)
+        {
+            if (logContext.Length == 0)
             {
-                DoLog(logType, messageGenerator(), enabledContexts);
+                logContext = new string[] { "*" };
             }
-        }
-
-        public void Fatal(string logMessage, params string[] logContexts)
-        {
-            Log(LogLevel.Fatal, logMessage, logContexts);
-        }
-
-        public void Fatal(Func<string> messageGenerator, params string[] logContexts)
-        {
-            Log(LogLevel.Fatal, messageGenerator, logContexts);
-        }
-
-        public void Error(string logMessage, params string[] logContexts)
-        {
-            Log(LogLevel.Error, logMessage, logContexts);
-        }
-
-        public void Error(Func<string> messageGenerator, params string[] logContexts)
-        {
-            Log(LogLevel.Error, messageGenerator, logContexts);
-        }
-
-        public void Warn(string logMessage, params string[] logContexts)
-        {
-            Log(LogLevel.Warn, logMessage, logContexts);
-        }
-
-        public void Warn(Func<string> messageGenerator, params string[] logContexts)
-        {
-            Log(LogLevel.Warn, messageGenerator, logContexts);
-        }
-
-        public void Info(string logMessage, params string[] logContexts)
-        {
-            Log(LogLevel.Info, logMessage, logContexts);
-        }
-
-        public void Info(Func<string> messageGenerator, params string[] logContexts)
-        {
-            Log(LogLevel.Info, messageGenerator, logContexts);
-        }
-
-        public void Debug(string logMessage, params string[] logContexts)
-        {
-            Log(LogLevel.Debug, logMessage, logContexts);
-        }
-
-        public void Debug(Func<string> messageGenerator, params string[] logContexts)
-        {
-            Log(LogLevel.Info, messageGenerator, logContexts);
-        }
-
-        public void Trace(string logMessage, params string[] logContexts)
-        {
-            Log(LogLevel.Trace, logMessage, logContexts);
-        }
-
-        public void Trace(Func<string> messageGenerator, params string[] logContexts)
-        {
-            Log(LogLevel.Trace, messageGenerator, logContexts);
-        }
-
-        public void Log(LogType unityLogType, string logMessage, params string[] logContexts)
-        {
-            switch (unityLogType)
+            foreach (var context in logContext)
             {
-                case LogType.Assert:
-                    Log(LogLevel.Fatal, logMessage, logContexts);
-                    break;
-                case LogType.Error:
-                case LogType.Exception:
-                    Log(LogLevel.Error, logMessage, logContexts);
-                    break;
-                case LogType.Log:
-                    Log(LogLevel.Info, logMessage, logContexts);
-                    break;
-                case LogType.Warning:
-                    Log(LogLevel.Warn, logMessage, logContexts);
-                    break;
+                var config = GetConfiguration(context);
+                if (config.enabled)
+                {
+                    config.sink.Log(logLevel, FormatMessage(context, messageGenerator()));
+                }
             }
+        }
+
+        private string FormatMessage(string logContext, string message)
+        {
+            return $"[{logContext}] {message}";
         }
     }
 }
