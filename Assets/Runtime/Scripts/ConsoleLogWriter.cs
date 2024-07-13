@@ -10,17 +10,16 @@ namespace io.github.thisisnozaku.logging {
         public static ConsoleLogConsumer CONSUMER = new ConsoleLogConsumer();
         public void Log(LogLevel level, string message)
         {
-            var finalMessage = $"{message}";
-            switch (level) {
-                case LogLevel.Fatal:
+            switch(level){
+                default:
+                    Debug.Log(message);
+                    break;
                 case LogLevel.Error:
-                    Debug.LogError(finalMessage);
+                case LogLevel.Fatal:
+                    Debug.LogError(message);
                     break;
                 case LogLevel.Warn:
-                    Debug.LogWarning(finalMessage);
-                    break;
-                default:
-                    Debug.Log(finalMessage);
+                    Debug.LogWarning(message);
                     break;
             }
         }

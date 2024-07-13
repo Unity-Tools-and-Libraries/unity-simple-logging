@@ -120,6 +120,16 @@ namespace io.github.thisisnozaku.logging.tests
             LogAssert.NoUnexpectedReceived();
         }
 
+        [Test]
+        public void LogCallsToLogSink()
+        {
+            var logSink = new TestSink();
+            logger.ConfigureLogging("combat", LogLevel.Info, logSink);
+
+            logger.Log(LogLevel.Info, "combat");
+
+            Assert.IsTrue(logSink.called);
+        }
 
         public class TestSink : ILogConsumer
         {

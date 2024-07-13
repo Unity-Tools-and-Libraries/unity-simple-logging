@@ -22,7 +22,7 @@ namespace io.github.thisisnozaku.logging
                 outputFile.Flush();
             } catch (IOException ex)
             {
-
+                Debug.LogException(ex);
             }
         }
     }
