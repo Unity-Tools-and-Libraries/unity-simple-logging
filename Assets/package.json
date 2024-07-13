@@ -1,5 +1,8 @@
 {
-	"name" : "simple-logging-module",
+	"name" : "io.github.thisisnozaku.logging",
 	"version" : "0.0.2",
-	"displayName" : "Logging Module"
-}
+	"displayName": "Logging Module",
+	"publishConfig": {
+		"registry": "http://52.13.104.80:4873/"
+	}
+}x
