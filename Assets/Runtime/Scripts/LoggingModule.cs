@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using log4net.Core;
 using UnityEngine;
 
 namespace io.github.thisisnozaku.logging
