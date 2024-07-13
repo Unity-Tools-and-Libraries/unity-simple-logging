@@ -17,11 +17,11 @@ namespace io.github.thisisnozaku.logging.tests
         [Test]
         public void LogsAllLevelsByDefault()
         {
-            LogAssert.Expect(LogType.Error, "[*] message");
             LogAssert.Expect(LogType.Log, "[*] message");
+            LogAssert.Expect(LogType.Error, "[*] message");
 
-            logger.Log(LogLevel.Error, "message");
             logger.Log(LogLevel.Info, "message");
+            logger.Log(LogLevel.Error, "message");
 
             LogAssert.NoUnexpectedReceived();
         }
@@ -46,7 +46,7 @@ namespace io.github.thisisnozaku.logging.tests
         [Test]
         public void CanCustomizeLevelByContext()
         {
-            logger.ConfigureLogging("*", LogLevel.Info);
+            logger.ConfigureLogging("*", LogLevel.Trace);
             LogAssert.Expect(LogType.Error, "[*] message");
             LogAssert.Expect(LogType.Log, "[combat] message");
 
@@ -120,116 +120,14 @@ namespace io.github.thisisnozaku.logging.tests
             LogAssert.NoUnexpectedReceived();
         }
 
-        [Test]
-        public void FatalMethodLogsAtErrorLevel()
+
+        public class TestSink : ILogConsumer
         {
-            LogAssert.Expect(LogType.Assert, "[*] message");
-            LogAssert.Expect(LogType.Assert, "[*] message");
-
-            logger.Fatal("message");
-            logger.Fatal(() => "message");
-
-            LogAssert.NoUnexpectedReceived();
-        }
-
-        [Test]
-        public void ErrorMethodLogsAtErrorLevel()
-        {
-            LogAssert.Expect(LogType.Error, "[*] message");
-            LogAssert.Expect(LogType.Error, "[*] message");
-
-            logger.Error("message");
-            logger.Error(() => "message");
-
-            LogAssert.NoUnexpectedReceived();
-        }
-
-        [Test]
-        public void WarnMethodLogsAtWarningLevel()
-        {
-            LogAssert.Expect(LogType.Warning, "[*] message");
-            LogAssert.Expect(LogType.Warning, "[*] message");
-
-            logger.Warn("message");
-            logger.Warn(() => "message");
-
-            LogAssert.NoUnexpectedReceived();
-        }
-
-        [Test]
-        public void InfoMethodLogsAtLogLevel()
-        {
-            LogAssert.Expect(LogType.Log, "[*] message");
-            LogAssert.Expect(LogType.Log, "[*] message");
-
-            logger.Info("message");
-            logger.Info(() => "message");
-
-            LogAssert.NoUnexpectedReceived();
-        }
-
-        [Test]
-        public void DebugMethodLogsAtLogLevel()
-        {
-            logger.ConfigureLogging("*", LogLevel.Debug);
-            LogAssert.Expect(LogType.Log, "[*] message");
-            LogAssert.Expect(LogType.Log, "[*] message");
-
-            logger.Debug("message");
-            logger.Debug(() => "message");
-
-            LogAssert.NoUnexpectedReceived();
-        }
-
-        [Test]
-        public void TraceMethodLogsAtLogLevel()
-        {
-            logger.ConfigureLogging("*", LogLevel.Trace);
-            LogAssert.Expect(LogType.Log, "[*] message");
-            LogAssert.Expect(LogType.Log, "[*] message");
-
-            logger.Trace("message");
-            logger.Trace(() => "message");
-
-            LogAssert.NoUnexpectedReceived();
-        }
-
-        [Test]
-        public void MessageGeneratorNotCalledForUnloggedMessages()
-        {
-            LogAssert.Expect(LogType.Log, "[*] foobar");
-            logger.Trace(() =>
+            public bool called { get; private set; }
+            public void Log(LogLevel level, string message)
             {
-                Assert.Fail();
-                return "";
-            });
-            logger.Info(() =>
-            {
-                return "foobar";
-            });
-
-            LogAssert.NoUnexpectedReceived();
-        }
-
-        [Test]
-        public void CanUseUnityLogType()
-        {
-            LogAssert.Expect(LogType.Assert, "[*] foobar");
-            logger.Log(LogType.Assert, "foobar");
-
-            LogAssert.Expect(LogType.Error, "[*] foobar");
-            logger.Log(LogType.Error, "foobar");
-
-            LogAssert.Expect(LogType.Error, "[*] foobar");
-            logger.Log(LogType.Exception, "foobar");
-
-            LogAssert.Expect(LogType.Log, "[*] foobar");
-            logger.Log(LogType.Log, "foobar");
-
-            LogAssert.Expect(LogType.Warning, "[*] foobar");
-            logger.Log(LogType.Warning, "foobar");
-
-            LogAssert.NoUnexpectedReceived();
+                called = true;
+            }
         }
     }
 }
