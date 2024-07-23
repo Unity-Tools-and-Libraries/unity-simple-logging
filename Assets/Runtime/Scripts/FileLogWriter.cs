@@ -17,8 +17,8 @@ namespace io.github.thisisnozaku.logging
             StreamWriter outputFile = null;
             try
             {
-                outputFile = File.AppendText(Destination + Environment.NewLine);
-                outputFile.Write(message);
+                outputFile = File.AppendText(Destination);
+                outputFile.Write(message + Environment.NewLine);
                 outputFile.Flush();
             } catch (IOException ex)
             {
