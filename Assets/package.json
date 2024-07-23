@@ -1,6 +1,6 @@
 {
 	"name" : "io.github.thisisnozaku.logging",
-	"version" : "0.0.2",
+	"version" : "0.0.4",
 	"displayName": "Logging Module",
 	"publishConfig": {
 		"registry": "http://52.13.104.80:4873/"

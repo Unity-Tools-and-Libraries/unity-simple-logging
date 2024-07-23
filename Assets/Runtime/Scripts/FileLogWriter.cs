@@ -1,5 +1,4 @@
-using System.Collections;
-using System.Collections.Generic;
+using System;
 using System.IO;
 using UnityEngine;
 namespace io.github.thisisnozaku.logging
@@ -18,7 +17,7 @@ namespace io.github.thisisnozaku.logging
             StreamWriter outputFile = null;
             try
             {
-                outputFile = File.AppendText(Destination);
+                outputFile = File.AppendText(Destination + Environment.NewLine);
                 outputFile.Write(message);
                 outputFile.Flush();
             } catch (IOException ex)
