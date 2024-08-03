@@ -1,4 +1,5 @@
 using NUnit.Framework;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.TestTools;
 
@@ -129,6 +130,17 @@ namespace io.github.thisisnozaku.logging.tests
             logger.Log(LogLevel.Info, "", "combat");
 
             Assert.IsTrue(logSink.called);
+        }
+
+        [Test]
+        public void LogToMultipleSink()
+        {
+            var sinks = new TestSink[] { new TestSink(), new TestSink() };
+            logger.ConfigureLogging("combat", LogLevel.Info, sinks);
+
+            logger.Log(LogLevel.Info, "", "combat");
+
+            Assert.IsTrue(sinks.All(s => s.called));
         }
 
         public class TestSink : ILogConsumer

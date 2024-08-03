@@ -32,9 +32,11 @@ namespace io.github.thisisnozaku.logging
             }
             foreach (var logContext in logContexts)
             {
-                var consumer = LogContextLevels[logContext].sink;
-                string finalMessage = string.Format("[{0}] {1}", logContext, logMessage);
-                consumer.Log(level, finalMessage);
+                foreach (var sink in LogContextLevels[logContext].sinks) {
+                    var consumer = sink;
+                    string finalMessage = string.Format("[{0}] {1}", logContext, logMessage);
+                    consumer.Log(level, finalMessage);
+                }
             }
         }
 
@@ -79,18 +81,18 @@ namespace io.github.thisisnozaku.logging
         /*
          * Enable or disable logging in the given context.
          */
-        public void ConfigureLogging(string logContext, LogLevel logLevel, ILogConsumer sink = null)
+        public void ConfigureLogging(string logContext, LogLevel logLevel, params ILogConsumer[] sinks)
         {
-            DoConfiguration(logContext, logLevel, true, sink);
+            DoConfiguration(logContext, logLevel, true, sinks);
         }
 
-        private void DoConfiguration(string logContext, LogLevel logLevel, bool enabled, ILogConsumer sink)
+        private void DoConfiguration(string logContext, LogLevel logLevel, bool enabled, params ILogConsumer[] sinks)
         {
-            if(sink == null)
+            if(sinks.Length == 0)
             {
-                sink = ConsoleLogConsumer.CONSUMER;
+                sinks = new ILogConsumer[] { ConsoleLogConsumer.CONSUMER };
             }
-            LogContextLevels[logContext] = new LoggingLevelConfiguration(logContext, logLevel, enabled, sink);
+            LogContextLevels[logContext] = new LoggingLevelConfiguration(logContext, logLevel, enabled, sinks);
         }
 
         private LoggingLevelConfiguration GetConfiguration(string context)
@@ -129,7 +131,10 @@ namespace io.github.thisisnozaku.logging
                 var config = GetConfiguration(context);
                 if (config.LogType >= logLevel && config.enabled)
                 {
-                    config.sink.Log(logLevel, FormatMessage(context, logMessage));
+                    foreach(var sink in config.sinks)
+                    {
+                        sink.Log(logLevel, FormatMessage(context, logMessage));
+                    }
                 }
             }
         }
@@ -145,7 +150,10 @@ namespace io.github.thisisnozaku.logging
                 var config = GetConfiguration(context);
                 if (config.enabled)
                 {
-                    config.sink.Log(logLevel, FormatMessage(context, messageGenerator()));
+                    foreach (var sink in config.sinks)
+                    {
+                        sink.Log(logLevel, FormatMessage(context, messageGenerator()));
+                    }
                 }
             }
         }
