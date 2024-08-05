@@ -120,21 +120,28 @@ namespace io.github.thisisnozaku.logging
             throw new Exception();
         }
 
-        public void Log(LogLevel logLevel, string logMessage, params string[] logContext)
+        public void Log(LogLevel logLevel, string logMessage, params string[] logContexts)
         {
-            if(logContext.Length == 0)
+            if(logContexts.Length == 0)
             {
-                logContext = new string[] { "*" };
+                logContexts = new string[] { "*" };
             }
-            foreach(var context in logContext)
+            foreach(var context in logContexts)
             {
                 var config = GetConfiguration(context);
                 if (config.LogType >= logLevel && config.enabled)
                 {
                     foreach(var sink in config.sinks)
                     {
-                        sink.Log(logLevel, FormatMessage(context, logMessage));
+                        sink.Log(logLevel, FormatMessage(logMessage, logContexts));
                     }
+                }
+            }
+            foreach(var config in LogContextLevels)
+            {
+                foreach(var sink in config.Value.sinks)
+                {
+                    sink.Flush();
                 }
             }
         }
@@ -158,9 +165,9 @@ namespace io.github.thisisnozaku.logging
             }
         }
 
-        private string FormatMessage(string logContext, string message)
+        private string FormatMessage(string message, params string[] contexts)
         {
-            return $"[{logContext}] {message}";
+            return $"{string.Join("", contexts.Select(_ => $"[{_}]"))} {message}";
         }
     }
 }
