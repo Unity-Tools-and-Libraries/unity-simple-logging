@@ -143,9 +143,28 @@ namespace io.github.thisisnozaku.logging.tests
             Assert.IsTrue(sinks.All(s => s.called));
         }
 
+        [Test]
+        public void MultipleContextsAppearInMessage()
+        {
+            logger.ConfigureLogging("foo", LogLevel.Info);
+            logger.ConfigureLogging("bar", LogLevel.Info);
+
+            LogAssert.Expect(LogType.Log, "[foo][bar] message");
+
+            logger.Log(LogLevel.Info, "message", "foo", "bar");
+
+            LogAssert.NoUnexpectedReceived();
+        }
+
         public class TestSink : ILogConsumer
         {
             public bool called { get; private set; }
+
+            public void Flush()
+            {
+
+            }
+
             public void Log(LogLevel level, string message)
             {
                 called = true;
