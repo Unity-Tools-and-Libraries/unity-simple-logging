@@ -21,7 +21,7 @@ By default, every context and every level is logged. To turn off this log-everyt
 
 To configure a particular context, specify the context name and level to enable logging for that level (and higher) for the given context. You can specify a context and give no level, which will disable all logging for that context.
 
-If you enable `Log` level logging, `Waring` and `Error` levels are also enabled. Enabling `Warning` also enables `Error` level. The `LogType` enum also specifies the `Assert` and `Exception` levels; this library treats these as equivalent to `Error`.
+If you enable `Log` level logging, `Warning` and `Error` levels are also enabled. Enabling `Warning` also enables `Error` level. The `LogType` enum also specifies the `Assert` and `Exception` levels; this library treats these as equivalent to `Error`.
 
 Whenever you log a message, you can specify a context as the final argument. The logger will check to ensure that logging is enabled for the specified level and context before actually logging the message. When no context is specified, a message is automatically given the catch-all context of `*`. 
 
